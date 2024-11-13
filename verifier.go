@@ -45,6 +45,23 @@ func (v *SCIONPilaCertificateVerifier) VerifyCertificate(certificateFile string,
 		return fmt.Errorf("chain has invalid length: %d, expected: 3", len(chain))
 	}
 
+	fmt.Println("DNS NAMES")
+	fmt.Println(chain[0].DNSNames)
+
+	// Check if the certificate chain contains the SCION address
+	dnsNameMatch := false
+	for _, dnsName := range chain[0].DNSNames {
+		if dnsName == scionAddress {
+			dnsNameMatch = true
+			break
+		} else {
+		}
+	}
+
+	if !dnsNameMatch {
+		return fmt.Errorf("certificate chain does not contain SCION address: %s", scionAddress)
+	}
+
 	//fmt.Println("Certificate Chain:")
 	//for i, cert := range chain {
 	//	fmt.Printf("Certificate %d:\n", i+1)
