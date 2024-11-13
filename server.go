@@ -1,6 +1,7 @@
 package scionpila
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -30,6 +31,10 @@ type CertificateAndKeyResponse struct {
 	PrivateKey       string `json:"private_key" binding:"required"`
 }
 
+type CertificateResponse struct {
+	CertificateChain string `json:"certificate_chain" binding:"required"`
+}
+
 type SCIONPilaServer struct {
 	Config *SCIONPilaConfig
 	router *gin.Engine
@@ -45,6 +50,7 @@ func NewSCIONPilaServer(config *SCIONPilaConfig) *SCIONPilaServer {
 
 	router := gin.Default()
 	router.POST("/generate-certificate", s.IssueCertificateHandler())
+	router.POST("/sign-certificate-request", s.SignCertificateRequestHandler())
 	s.router = router
 
 	return s
@@ -64,10 +70,12 @@ func (s *SCIONPilaServer) IssueCertificateHandler() func(c *gin.Context) {
 			return
 		}
 
-		if !ipOk {
+		fmt.Println(ipOk)
+		// TODO: Handle empty case
+		/*if !ipOk {
 			c.JSON(http.StatusForbidden, gin.H{"error": "IP not allowed"})
 			return
-		}
+		}*/
 
 		var request CertificateRequest
 		if err := c.ShouldBindJSON(&request); err != nil {
@@ -94,10 +102,12 @@ func (s *SCIONPilaServer) SignCertificateRequestHandler() func(c *gin.Context) {
 			return
 		}
 
-		if !ipOk {
+		fmt.Println(ipOk)
+		// TODO: Handle empty case
+		/*if !ipOk {
 			c.JSON(http.StatusForbidden, gin.H{"error": "IP not allowed"})
 			return
-		}
+		}*/
 
 		var request CertificateSigningRequest
 		if err := c.ShouldBindJSON(&request); err != nil {
@@ -105,11 +115,13 @@ func (s *SCIONPilaServer) SignCertificateRequestHandler() func(c *gin.Context) {
 			return
 		}
 
-		signedCert := s.signer.IssueAndSignCertificate(request.ScionAddress)
+		signedCert, err := s.signer.SignCertificateRequest(request.ScionAddress, request.CertificateSigningRequest)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 
-		c.JSON(http.StatusOK, CertificateAndKeyResponse{
+		c.JSON(http.StatusOK, CertificateResponse{
 			CertificateChain: string(signedCert.CertificateChain),
-			PrivateKey:       string(signedCert.PrivateKey),
 		})
 	}
 }

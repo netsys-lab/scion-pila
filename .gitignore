@@ -1,2 +1,3 @@
 cmd/scion-pila/scion-pila
 cmd/client/client
+cmd/verify/verify

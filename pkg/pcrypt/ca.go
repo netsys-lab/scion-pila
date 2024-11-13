@@ -6,10 +6,9 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
 )
 
-func LoadRawCACertificates(key, cert string) ([]byte, []byte) {
+func LoadRawCACertificates(key, cert string) ([]*x509.Certificate, []byte) {
 
 	// Read the CA private key
 	caKeyPEM, err := ioutil.ReadFile(key)
@@ -18,26 +17,31 @@ func LoadRawCACertificates(key, cert string) ([]byte, []byte) {
 	}
 
 	// Find and read the CA certificate file
-	caCertFiles, err := filepath.Glob(filepath.Join(cert, "ISD*.pem"))
+	/*caCertFiles, err := filepath.Glob(filepath.Join(cert, "ISD*.pem"))
 	if err != nil || len(caCertFiles) == 0 {
 		panic(fmt.Sprintf("Failed to find CA certificate file: %v", err))
-	}
-	caCertPEM, err := ioutil.ReadFile(caCertFiles[0])
+	}*/
+	caCertPEM, err := ioutil.ReadFile(cert /*caCertFiles[0]*/)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to read CA certificate: %v", err))
 	}
 
-	return caCertPEM, caKeyPEM
-}
-
-func ParseCA(caCertPEM, caKeyPEM []byte) (*x509.Certificate, *ecdsa.PrivateKey) {
-	block, _ := pem.Decode(caCertPEM)
-	caCert, err := x509.ParseCertificate(block.Bytes)
+	certs, err := ParsePEMCerts(string(caCertPEM))
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("Certificate Chain:")
+	for i, cert := range certs {
+		fmt.Printf("Certificate %d:\n", i+1)
+		fmt.Printf("  Subject: %s\n", cert.Subject.CommonName)
+	}
 
-	block, _ = pem.Decode(caKeyPEM)
+	return certs, caKeyPEM
+}
+
+func ParseCA(caCerts []*x509.Certificate, caKeyPEM []byte) ([]*x509.Certificate, *ecdsa.PrivateKey) {
+
+	block, _ := pem.Decode(caKeyPEM)
 	privateKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
 		panic(err)
@@ -48,10 +52,10 @@ func ParseCA(caCertPEM, caKeyPEM []byte) (*x509.Certificate, *ecdsa.PrivateKey) 
 		panic("Failed to parse CA private key")
 	}
 
-	return caCert, caKey
+	return caCerts, caKey
 }
 
-func LoadAndParseCACertificates(key, cert string) (*x509.Certificate, *ecdsa.PrivateKey) {
+func LoadAndParseCACertificates(key, cert string) ([]*x509.Certificate, *ecdsa.PrivateKey) {
 	caCertPEM, caKeyPEM := LoadRawCACertificates(key, cert)
 	return ParseCA(caCertPEM, caKeyPEM)
 }

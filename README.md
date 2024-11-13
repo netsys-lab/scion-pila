@@ -68,13 +68,20 @@ log.Printf("Certificate: %v\n", certificate)
 ```
 
 ## Certificate Verification
+
+### Standalone
+```sh
+cd cmd/verify
+CGO_ENABLED=0 go build
+./verify "--cert=./clientcert.pem" "--isd=1" "--address=1-150,127.0.0.1:445"
+```
+
+### Library
 ```go
 // Assuming to have TRCs under a folder on your hosts, e.g. /etc/scion/certs
 client := scionpila.NewSCIONPilaCertificateVerifier("/etc/scion/certs") 
 err := client.VerifyCertificate(certificate, "71-2:0:4a,127.0.0.1:445")
-
 ```
-
 
 ## TODOS
 - Let PILA Server listen with own certificate on SCION address to ensure that it is trusted???

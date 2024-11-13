@@ -1,11 +1,13 @@
 package main
 
 import (
-	"crypto/x509"
+	"fmt"
+	"io/ioutil"
 	"log"
 
 	flags "github.com/jessevdk/go-flags"
 	scionpila "github.com/netsys-lab/scion-pila"
+	"github.com/netsys-lab/scion-pila/pkg/pcrypt"
 )
 
 var opts struct {
@@ -15,6 +17,12 @@ var opts struct {
 
 	// Example of a required flag
 	ScionAddress string `short:"a" long:"address" description:"SCION Address to obtain certificate for" default:"" required:"true"`
+
+	// Example of a required flag
+	TRCFolder string `short:"t" long:"trcs" description:"Folder which contains all the SCION TRCs" default:"/etc/scion/certs" required:"false"`
+
+	// Example of a required flag
+	//SkipVerification bool `short:"k" long:"skip" description:"Skip certificate verification" default:"false" required:"true"`
 }
 
 func main() {
@@ -27,7 +35,18 @@ func main() {
 	client := scionpila.NewSCIONPilaClient(opts.Server)
 
 	// Fetch certificate and private key pair
-	certificate, key, err := client.FetchCertificateAndPrivateKey(opts.ScionAddress)
+	/*certificate, key, err := client.FetchCertificateAndPrivateKey(opts.ScionAddress)
+	if err != nil {
+		log.Fatal(err)
+	}*/
+
+	key := scionpila.NewPrivateKey()
+	csr, err := scionpila.NewCertificateSigningRequest(key)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	certificate, err := client.FetchCertificateFromSigningRequest(opts.ScionAddress, csr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,15 +54,29 @@ func main() {
 	log.Printf("Certificate: %v\n", certificate)
 	log.Printf("Key: %v\n", key)
 
-	// Fetch certificate from signing request
-	req := &x509.CertificateRequest{
-		// Fill data here, create the request with private/public key pair
-	}
-
-	certificate, err = client.FetchCertificateFromSigningRequest(opts.ScionAddress, req)
+	pemFile := "./cert.pem"
+	content := pcrypt.WriteCertsToPem(certificate)
+	err = ioutil.WriteFile(pemFile, content, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	verifier := scionpila.NewSCIONPilaCertificateVerifier(opts.TRCFolder, 1)
+	err = verifier.VerifyCertificate(pemFile, opts.ScionAddress)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Certificate verified successfully")
+
+	// Fetch certificate from signing request
+	//req := &x509.CertificateRequest{
+	// Fill data here, create the request with private/public key pair
+	//}
+
+	//certificate, err = client.FetchCertificateFromSigningRequest(opts.ScionAddress, req)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
 
 	log.Printf("Certificate: %v\n", certificate)
 
