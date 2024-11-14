@@ -49,7 +49,7 @@ func NewSCIONPilaServer(config *SCIONPilaConfig) *SCIONPilaServer {
 	}
 
 	router := gin.Default()
-	router.POST("/generate-certificate", s.IssueCertificateHandler())
+	// router.POST("/generate-certificate", s.IssueCertificateHandler())
 	router.POST("/sign-certificate-request", s.SignCertificateRequestHandler())
 	s.router = router
 
@@ -60,7 +60,7 @@ func (s *SCIONPilaServer) Run() error {
 	return s.router.Run(s.Config.Server)
 }
 
-func (s *SCIONPilaServer) IssueCertificateHandler() func(c *gin.Context) {
+/*func (s *SCIONPilaServer) IssueCertificateHandler() func(c *gin.Context) {
 	return func(c *gin.Context) {
 
 		ip := strings.Split(c.Request.RemoteAddr, ":")[0]
@@ -69,13 +69,6 @@ func (s *SCIONPilaServer) IssueCertificateHandler() func(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-
-		fmt.Println(ipOk)
-		// TODO: Handle empty case
-		/*if !ipOk {
-			c.JSON(http.StatusForbidden, gin.H{"error": "IP not allowed"})
-			return
-		}*/
 
 		var request CertificateRequest
 		if err := c.ShouldBindJSON(&request); err != nil {
@@ -90,7 +83,7 @@ func (s *SCIONPilaServer) IssueCertificateHandler() func(c *gin.Context) {
 			PrivateKey:       string(signedCert.PrivateKey),
 		})
 	}
-}
+}*/
 
 func (s *SCIONPilaServer) SignCertificateRequestHandler() func(c *gin.Context) {
 	return func(c *gin.Context) {

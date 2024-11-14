@@ -2,12 +2,10 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 
 	flags "github.com/jessevdk/go-flags"
 	scionpila "github.com/netsys-lab/scion-pila"
-	"github.com/netsys-lab/scion-pila/pkg/pcrypt"
 )
 
 var opts struct {
@@ -54,15 +52,8 @@ func main() {
 	log.Printf("Certificate: %v\n", certificate)
 	log.Printf("Key: %v\n", key)
 
-	pemFile := "./cert.pem"
-	content := pcrypt.WriteCertsToPem(certificate)
-	err = ioutil.WriteFile(pemFile, content, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	verifier := scionpila.NewSCIONPilaCertificateVerifier(opts.TRCFolder, 1)
-	err = verifier.VerifyCertificate(pemFile, opts.ScionAddress)
+	verifier := scionpila.NewSCIONPilaCertificateVerifier(opts.TRCFolder)
+	err = verifier.VerifyCertificateChain(certificate, opts.ScionAddress)
 	if err != nil {
 		log.Fatal(err)
 	}

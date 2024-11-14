@@ -2,7 +2,6 @@ package pcrypt
 
 import (
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha1"
 	"crypto/x509"
@@ -11,7 +10,10 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
+	"net"
 	"time"
+
+	"github.com/scionproto/scion/pkg/snet"
 )
 
 type SCIONPilaSignedCertificate struct {
@@ -43,7 +45,7 @@ func NewSCIONPilaCertificateSigner(caKeyPath, caCertPath string) *SCIONPilaCerti
 	}
 }
 
-func (s *SCIONPilaCertificateSigner) IssueAndSignCertificate(scionAddress string) *SCIONPilaSignedCertificate {
+/*func (s *SCIONPilaCertificateSigner) IssueAndSignCertificate(scionAddress string) *SCIONPilaSignedCertificate {
 
 	// Generate client certificate
 	clientCertPEM, clientKeyPEM := createClientCertificate(scionAddress, s.asCert, s.asKey)
@@ -59,7 +61,7 @@ func (s *SCIONPilaCertificateSigner) IssueAndSignCertificate(scionAddress string
 		CertificateChain: fullCertChainPEM,
 		PrivateKey:       clientKeyPEM,
 	}
-}
+}*/
 
 func (s *SCIONPilaCertificateSigner) SignCertificateRequest(scionAddress, certificateSigningRequest string) (*SCIONPilaSignedCertificateRequest, error) {
 
@@ -88,7 +90,7 @@ func (s *SCIONPilaCertificateSigner) SignCertificateRequest(scionAddress, certif
 	}, nil
 }
 
-func createClientCertificate(scionAddress string, caCert *x509.Certificate, caKey *ecdsa.PrivateKey) ([]byte, []byte) {
+/*func createClientCertificate(scionAddress string, caCert *x509.Certificate, caKey *ecdsa.PrivateKey) ([]byte, []byte) {
 	priv, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	if err != nil {
 		panic(err)
@@ -128,6 +130,7 @@ func createClientCertificate(scionAddress string, caCert *x509.Certificate, caKe
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageTimeStamping},
 		BasicConstraintsValid: true,
 		DNSNames:              []string{scionAddress},
+		IPAddresses:           []net.IP{net.ParseIP("127.0.0.1")},
 		SubjectKeyId:          subjectKeyID[:],
 	}
 
@@ -145,9 +148,15 @@ func createClientCertificate(scionAddress string, caCert *x509.Certificate, caKe
 	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: privBytes})
 
 	return certPEM, keyPEM
-}
+}*/
 
 func signClientCertificateRequest(scionAddress string, caCert *x509.Certificate, caKey *ecdsa.PrivateKey, csr *x509.CertificateRequest) []byte {
+
+	fmt.Println(scionAddress)
+	snetAddr, err := snet.ParseUDPAddr(scionAddress)
+	if err != nil {
+		panic(fmt.Errorf("failed to parse SCION address: %s", err.Error()))
+	}
 
 	notBefore := time.Now()
 	notAfter := notBefore.Add(24 * time.Hour)
@@ -173,7 +182,7 @@ func signClientCertificateRequest(scionAddress string, caCert *x509.Certificate,
 			ExtraNames: []pkix.AttributeTypeAndValue{
 				{
 					Type:  customOID,
-					Value: fmt.Sprintf("%s-%s", "1", "150"),
+					Value: fmt.Sprintf("%s-%s", snetAddr.IA.ISD(), snetAddr.IA.AS()),
 				},
 			},
 		},
@@ -183,6 +192,7 @@ func signClientCertificateRequest(scionAddress string, caCert *x509.Certificate,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageTimeStamping},
 		BasicConstraintsValid: true,
 		DNSNames:              []string{scionAddress},
+		IPAddresses:           []net.IP{snetAddr.Host.IP},
 		SubjectKeyId:          subjectKeyID[:],
 	}
 

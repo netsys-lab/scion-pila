@@ -12,37 +12,27 @@ import (
 	"github.com/netsys-lab/scion-pila/pkg/fileutils"
 	"github.com/netsys-lab/scion-pila/pkg/pcrypt"
 	"github.com/scionproto/scion/pkg/scrypto/cppki"
+	"github.com/scionproto/scion/pkg/snet"
 )
 
 type SCIONPilaCertificateVerifier struct {
 	trcFolder string
-	isd       int
 }
 
-func NewSCIONPilaCertificateVerifier(trcFolder string, isd int) *SCIONPilaCertificateVerifier {
+func NewSCIONPilaCertificateVerifier(trcFolder string) *SCIONPilaCertificateVerifier {
 	return &SCIONPilaCertificateVerifier{
 		trcFolder: trcFolder,
-		isd:       isd,
 	}
 }
 
-func (v *SCIONPilaCertificateVerifier) VerifyCertificate(certificateFile string, scionAddress string) error {
-
-	// Read certficate file as string
-
-	bts, err := ioutil.ReadFile(certificateFile)
-	if err != nil {
-		return fmt.Errorf("failed to read certificate file: %s", err.Error())
-	}
-
-	// Load certificate chain from file
-	chain, err := pcrypt.ParsePEMCerts(string(bts))
-	if err != nil {
-		return fmt.Errorf("failed to read certificate chain: %s", err.Error())
-	}
-
+func (v *SCIONPilaCertificateVerifier) VerifyCertificateChain(chain []*x509.Certificate, scionAddress string) error {
 	if len(chain) != 3 {
 		return fmt.Errorf("chain has invalid length: %d, expected: 3", len(chain))
+	}
+
+	snetAddr, err := snet.ParseUDPAddr(scionAddress)
+	if err != nil {
+		return fmt.Errorf("failed to parse SCION address: %s", err.Error())
 	}
 
 	fmt.Println("DNS NAMES")
@@ -70,7 +60,7 @@ func (v *SCIONPilaCertificateVerifier) VerifyCertificate(certificateFile string,
 
 	//fmt.Println("Certificate chain: ", chain)
 
-	trcFiles, err := fileutils.ListFilesByPrefixAndSuffix(v.trcFolder, fmt.Sprintf("ISD%d-", v.isd), ".trc")
+	trcFiles, err := fileutils.ListFilesByPrefixAndSuffix(v.trcFolder, fmt.Sprintf("ISD%d-", snetAddr.IA.ISD()), ".trc")
 	if err != nil {
 		return fmt.Errorf("failed to list TRC files: %s", err.Error())
 	}
@@ -113,8 +103,27 @@ func (v *SCIONPilaCertificateVerifier) VerifyCertificate(certificateFile string,
 		return fmt.Errorf("verification failed %s", err)
 	}
 
-	fmt.Printf("Successfully verified certificate chain: %q\n", certificateFile)
+	// fmt.Printf("Successfully verified certificate chain: %q\n", certificateFile)
 	return nil
+}
+
+func (v *SCIONPilaCertificateVerifier) VerifyCertificateFile(certificateFile string, scionAddress string) error {
+
+	// Read certficate file as string
+
+	bts, err := ioutil.ReadFile(certificateFile)
+	if err != nil {
+		return fmt.Errorf("failed to read certificate file: %s", err.Error())
+	}
+
+	// Load certificate chain from file
+	chain, err := pcrypt.ParsePEMCerts(string(bts))
+	if err != nil {
+		return fmt.Errorf("failed to read certificate chain: %s", err.Error())
+	}
+
+	return v.VerifyCertificateChain(chain, scionAddress)
+
 }
 
 // ValidateChain validates that a slice of SCION certificates can be

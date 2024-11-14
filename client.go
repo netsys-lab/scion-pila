@@ -2,7 +2,6 @@ package scionpila
 
 import (
 	"bytes"
-	"crypto/ecdsa"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -23,8 +22,8 @@ func NewSCIONPilaClient(server string) *SCIONPilaClient {
 	}
 }
 
-func (c *SCIONPilaClient) FetchCertificateAndPrivateKey(scionAddress string) ([]x509.Certificate, *ecdsa.PrivateKey, error) {
-	url := "http://localhost:8843/generate-certificate"
+/*func (c *SCIONPilaClient) FetchCertificateAndPrivateKey(scionAddress string) ([]x509.Certificate, *ecdsa.PrivateKey, error) {
+	url := fmt.Sprintf("%s/generate-certificate", c.Server) // http://localhost:8843/generate-certificate
 
 	// Define the payload
 	requestData := CertificateRequest{
@@ -78,14 +77,14 @@ func (c *SCIONPilaClient) FetchCertificateAndPrivateKey(scionAddress string) ([]
 
 	fmt.Println("Certificate generated successfully")
 	return nil, nil, nil
-}
+}*/
 
 func (c *SCIONPilaClient) FetchCertificateFromSigningRequest(scionAddress string, csr []byte) ([]*x509.Certificate, error) {
-	url := "http://localhost:8843/sign-certificate-request"
+	url := fmt.Sprintf("%s/sign-certificate-request", c.Server) // http://localhost:8843/sign-certificate-request
 
 	// Define the payload
 	requestData := CertificateSigningRequest{
-		ScionAddress:              "1-ff00:0:110",
+		ScionAddress:              scionAddress,
 		CertificateSigningRequest: string(csr),
 	}
 

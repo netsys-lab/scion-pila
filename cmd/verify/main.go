@@ -33,8 +33,8 @@ func main() {
 		panic(err)
 	}
 
-	client := scionpila.NewSCIONPilaCertificateVerifier(opts.TRCFolder, opts.ISD)
-	err = client.VerifyCertificate(opts.CertificateChain, opts.ScionAddress)
+	client := scionpila.NewSCIONPilaCertificateVerifier(opts.TRCFolder)
+	err = client.VerifyCertificateFile(opts.CertificateChain, opts.ScionAddress)
 	if err != nil {
 		fmt.Println("Certificate verification failed")
 		log.Fatal(err)
