@@ -32,12 +32,6 @@ func main() {
 
 	client := scionpila.NewSCIONPilaClient(opts.Server)
 
-	// Fetch certificate and private key pair
-	/*certificate, key, err := client.FetchCertificateAndPrivateKey(opts.ScionAddress)
-	if err != nil {
-		log.Fatal(err)
-	}*/
-
 	key := scionpila.NewPrivateKey()
 	csr, err := scionpila.NewCertificateSigningRequest(key)
 	if err != nil {
@@ -48,9 +42,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	log.Printf("Certificate: %v\n", certificate)
-	log.Printf("Key: %v\n", key)
 
 	verifier := scionpila.NewSCIONPilaCertificateVerifier(opts.TRCFolder)
 	err = verifier.VerifyCertificateChain(certificate, opts.ScionAddress)

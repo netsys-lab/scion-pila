@@ -11,9 +11,6 @@ import (
 var opts struct {
 
 	// Example of a required flag
-	ISD int `short:"i" long:"isd" description:"ISD of the local host" default:"" required:"true"`
-
-	// Example of a required flag
 	CertificateChain string `short:"c" long:"cert" description:"Certificate chain to be verified" default:"" required:"true"`
 
 	// Example of a required flag
