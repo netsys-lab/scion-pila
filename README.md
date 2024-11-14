@@ -1,11 +1,18 @@
 # scion-pila: Pervasive Internet-Wide Low-Latency Authentication implemented for SCION
+This repository contains an implementation of the `PILA` design for the SCION Internet architecture. 
 
 Related Papers:
-- Pervasive Internet-Wide Low-Latency Authentication
-- Ubiquitous Secure Communication in a Future Internet Architecture
+- [Pervasive Internet-Wide Low-Latency Authentication](https://netsec.ethz.ch/publications/papers/kraehenbuehl2021pila.pdf)
+- [Ubiquitous Secure Communication in a Future Internet Architecture](https://link.springer.com/article/10.1007/s42979-022-01234-6)
 
-## Status
-Currently work in progress, goal is to have a first PoC soon...
+## Overview
+This implementation is designed to run on SCION AS infrastructure nodes that have a SCION control plane AS certificate. `scion-pila` offers a `HTTP` server with a single endpoint to obtain an endhost certificate for a SCION address by providing a certificate signing request (CSR). This server stores a list of allowed subnets, requests are only allowed from source IPs out of these subnets. The intended way is to add AS-internal subnets to this list so that only hosts within the AS can access the endpoint. 
+
+The `scion-pila` offers the following features:
+- A server that serves the endpoint to issue endhost certificates for SCION addresses.
+- A client that generates a CSR and obtains a certificate from the server.
+- A verifier that verifies the certificate against the ISDs trust root chain (TRC).
+- A sample how to use `scion-pila` to secure QUIC connections based on `quic-go`.
 
 ## Usage
 
@@ -38,33 +45,25 @@ log.Fatal(server.Run())
 ```sh
 cd cmd/client
 CGO_ENABLED=0 go build
-./client "--server=127.0.0.1:8843" "--address=71-2:0:4a,127.0.0.1:445"
+./client "--server=127.0.0.1:8843" "--address=71-2:0:4a,127.0.0.1:445" "--trcs=/etc/scion/certs"
 ```
 
 ### Library
 ```go
 client := scionpila.NewSCIONPilaClient(opts.Server)
 
-// Fetch certificate and private key pair
-certificate, key, err := client.FetchCertificateAndPrivateKey(opts.ScionAddress)
+key := scionpila.NewPrivateKey()
+csr, err := scionpila.NewCertificateSigningRequest(key)
 if err != nil {
     log.Fatal(err)
 }
 
-log.Printf("Certificate: %v\n", certificate)
-log.Printf("Key: %v\n", key)
-
-// Fetch certificate from signing request
-req := &x509.CertificateRequest{
-    // Fill data here, create the request with private/public key pair
-}
-
-certificate, err = client.FetchCertificateFromSigningRequest(opts.ScionAddress, req)
+certificate, err := client.FetchCertificateFromSigningRequest(opts.ScionAddress, csr)
 if err != nil {
     log.Fatal(err)
 }
 
-log.Printf("Certificate: %v\n", certificate)
+
 ```
 
 ## Certificate Verification
