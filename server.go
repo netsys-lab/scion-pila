@@ -11,10 +11,10 @@ import (
 )
 
 type SCIONPilaConfig struct {
-	CAKeyPath      string   `yaml:"ca_key_path"`
-	CACertPath     string   `yaml:"ca_cert_path"`
-	Server         string   `yaml:"server"`
-	AllowedSubnets []string `yaml:"allowed_subnets"`
+	CAKeyPath      string   `toml:"ca_key_path"`
+	CACertPath     string   `toml:"ca_cert_path"`
+	Server         string   `toml:"server"`
+	AllowedSubnets []string `toml:"allowed_subnets"`
 }
 
 type CertificateRequest struct {
