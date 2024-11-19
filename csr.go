@@ -23,7 +23,7 @@ func NewCertificateSigningRequest(privateKey *ecdsa.PrivateKey) ([]byte, error) 
 	// Create a CSR template
 	csrTemplate := x509.CertificateRequest{
 		Subject: pkix.Name{
-			CommonName: "tbd...",
+			CommonName: "SCION Endhost Certificate",
 		},
 	}
 

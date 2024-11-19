@@ -2,13 +2,13 @@ package scionpila
 
 import (
 	"bytes"
-	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/netsys-lab/scion-pila/pkg/logger"
 	"github.com/netsys-lab/scion-pila/pkg/pcrypt"
 )
 
@@ -129,10 +129,10 @@ func (c *SCIONPilaClient) FetchCertificateFromSigningRequest(scionAddress string
 	}
 
 	// Print the struct fields
-	fmt.Printf("Response Status: %s\n", resp.Status)
-	fmt.Printf("Certificate Chain: %s\n", certResponse.CertificateChain)
+	// fmt.Printf("Response Status: %s\n", resp.Status)
+	// fmt.Printf("Certificate Chain: %s\n", certResponse.CertificateChain)
 
-	fmt.Println("Certificate generated successfully")
+	logger.Log.Debug("Certificate generated successfully")
 
 	chain, err := pcrypt.ParsePEMCerts(certResponse.CertificateChain)
 	if err != nil {
@@ -140,8 +140,4 @@ func (c *SCIONPilaClient) FetchCertificateFromSigningRequest(scionAddress string
 	}
 
 	return chain, nil
-}
-
-func (c *SCIONPilaClient) FetchTLSCertificate(scionAddress string) ([]tls.Certificate, error) {
-	return nil, nil
 }

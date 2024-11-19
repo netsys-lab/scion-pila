@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/netsys-lab/scion-pila/pkg/fileutils"
+	"github.com/netsys-lab/scion-pila/pkg/logger"
 	"github.com/netsys-lab/scion-pila/pkg/pcrypt"
 	"github.com/scionproto/scion/pkg/scrypto/cppki"
 	"github.com/scionproto/scion/pkg/snet"
@@ -35,9 +36,6 @@ func (v *SCIONPilaCertificateVerifier) VerifyCertificateChain(chain []*x509.Cert
 		return fmt.Errorf("failed to parse SCION address: %s", err.Error())
 	}
 
-	fmt.Println("DNS NAMES")
-	fmt.Println(chain[0].DNSNames)
-
 	// Check if the certificate chain contains the SCION address
 	dnsNameMatch := false
 	for _, dnsName := range chain[0].DNSNames {
@@ -52,13 +50,13 @@ func (v *SCIONPilaCertificateVerifier) VerifyCertificateChain(chain []*x509.Cert
 		return fmt.Errorf("certificate chain does not contain SCION address: %s", scionAddress)
 	}
 
-	//fmt.Println("Certificate Chain:")
+	//logger.Log.Debug("Certificate Chain:")
 	//for i, cert := range chain {
 	//	fmt.Printf("Certificate %d:\n", i+1)
 	//	fmt.Printf("  Subject: %s\n", cert.Subject.CommonName)
 	//}
 
-	//fmt.Println("Certificate chain: ", chain)
+	//logger.Log.Debug("Certificate chain: ", chain)
 
 	trcFiles, err := fileutils.ListFilesByPrefixAndSuffix(v.trcFolder, fmt.Sprintf("ISD%d-", snetAddr.IA.ISD()), ".trc")
 	if err != nil {
@@ -68,7 +66,7 @@ func (v *SCIONPilaCertificateVerifier) VerifyCertificateChain(chain []*x509.Cert
 	sort.Strings(sort.StringSlice(trcFiles))
 	trcId := trcFiles[len(trcFiles)-1]
 
-	fmt.Println("Comparing against trc file: ", trcId)
+	logger.Log.Debug("Comparing against trc file: ", trcId)
 
 	trc, err := loadTRC(trcId)
 	if err != nil {
@@ -220,8 +218,8 @@ func verifyChain(certs []*x509.Certificate, trc *cppki.TRC, now time.Time) error
 // isParentCert verifies if parentCert is the issuer of childCert
 func isParentCert(parentCert, childCert *x509.Certificate) bool {
 	// Check if the issuer of the child matches the subject of the parent
-	fmt.Println("Parent: ", parentCert.Subject.String())
-	fmt.Println("Child: ", childCert.Issuer.String())
+	// logger.Log.Debug("Parent: ", parentCert.Subject.String())
+	// logger.Log.Debug("Child: ", childCert.Issuer.String())
 	if parentCert.Subject.String() != childCert.Issuer.String() {
 		return false
 	}
@@ -229,7 +227,9 @@ func isParentCert(parentCert, childCert *x509.Certificate) bool {
 	// Attempt to verify the child's signature with the parent's public key
 	// Manually verify the signature of childCert using parentCert's public key
 	err := parentCert.CheckSignature(childCert.SignatureAlgorithm, childCert.RawTBSCertificate, childCert.Signature)
-	fmt.Println(err)
+	if err != nil {
+		logger.Log.Debug("Failed to check signature ", err)
+	}
 	return err == nil
 }
 

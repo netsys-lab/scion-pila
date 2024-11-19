@@ -1,7 +1,6 @@
 package scionpila
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -95,12 +94,10 @@ func (s *SCIONPilaServer) SignCertificateRequestHandler() func(c *gin.Context) {
 			return
 		}
 
-		fmt.Println(ipOk)
-		// TODO: Handle empty case
-		/*if !ipOk {
+		if !ipOk {
 			c.JSON(http.StatusForbidden, gin.H{"error": "IP not allowed"})
 			return
-		}*/
+		}
 
 		var request CertificateSigningRequest
 		if err := c.ShouldBindJSON(&request); err != nil {

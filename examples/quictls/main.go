@@ -11,6 +11,7 @@ import (
 
 	scionpila "github.com/netsys-lab/scion-pila"
 	"github.com/quic-go/quic-go"
+	"github.com/quic-go/quic-go/logging"
 	"github.com/scionproto/scion/pkg/snet"
 )
 
@@ -22,6 +23,13 @@ func main() {
 
 	time.Sleep(3 * time.Second)
 	dial()
+}
+
+type QPartsQuicTracer struct {
+	Tracer       logging.ConnectionTracer
+	Context      context.Context
+	Perspective  logging.Perspective
+	ConnectionID quic.ConnectionID
 }
 
 func dial() {
@@ -48,8 +56,30 @@ func dial() {
 	}
 
 	remoteVerifyFunc := scionpila.VerifyQUICCertificateChainsHandler("/etc/scion/certs", remote)
+	tracers := map[quic.ConnectionID]QPartsQuicTracer{}
+	conf := quic.Config{
+		Tracer: func(context context.Context, perspective logging.Perspective, connectionID quic.ConnectionID) *logging.ConnectionTracer {
+			fmt.Println("Obtain Tracer")
+			t := QPartsQuicTracer{}
 
-	session, err := quic.Dial(context.Background(), conn, rudpAddr, &tls.Config{InsecureSkipVerify: true, VerifyPeerCertificate: remoteVerifyFunc, NextProtos: []string{"qparts"}}, &quic.Config{})
+			tracer := &logging.ConnectionTracer{}
+			tracer.AcknowledgedPacket = func(encLevel logging.EncryptionLevel, packetNumber logging.PacketNumber) {
+				fmt.Println("Acked Packet")
+			}
+			tracer.LostPacket = func(encLevel logging.EncryptionLevel, packetNumber logging.PacketNumber, reason logging.PacketLossReason) {
+				fmt.Println("Lost Packet")
+				fmt.Println(reason)
+			}
+			t.Tracer = *tracer
+			t.Context = context
+			t.Perspective = perspective
+			t.ConnectionID = connectionID
+			tracers[connectionID] = t
+			return tracer
+		},
+	}
+
+	session, err := quic.Dial(context.Background(), conn, rudpAddr, &tls.Config{InsecureSkipVerify: true, VerifyPeerCertificate: remoteVerifyFunc, NextProtos: []string{"qparts"}}, &conf)
 	if err != nil {
 		panic(err)
 	}

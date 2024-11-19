@@ -6,6 +6,8 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+
+	"github.com/netsys-lab/scion-pila/pkg/logger"
 )
 
 // createTLSCertificate creates a tls.Certificate from a certificate chain and a private key
@@ -37,7 +39,7 @@ func VerifyQUICCertificateChainsHandler(trcFolder, remoteSCIONAddress string) fu
 	verifier := NewSCIONPilaCertificateVerifier(trcFolder)
 
 	return func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
-		fmt.Println("Verifying certificate chain")
+		logger.Log.Debug("Verifying certificate chain")
 
 		var certs []*x509.Certificate
 
@@ -52,9 +54,9 @@ func VerifyQUICCertificateChainsHandler(trcFolder, remoteSCIONAddress string) fu
 
 		err := verifier.VerifyCertificateChain(certs, remoteSCIONAddress)
 		if err != nil {
-			fmt.Println(err)
 			return fmt.Errorf("failed to verify certificate chain: %w", err)
 		}
+		logger.Log.Debug("Certificate chain verified successfully")
 		return nil
 	}
 }

@@ -7,6 +7,11 @@ import (
 
 // Function to check if the source IP is in a blocked subnet
 func IsIPInSubnets(ip string, subnets []string) (bool, error) {
+
+	if len(subnets) == 0 {
+		return true, nil
+	}
+
 	for _, subnet := range subnets {
 		_, cidr, err := net.ParseCIDR(subnet)
 		if err != nil {

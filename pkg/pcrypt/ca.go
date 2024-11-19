@@ -6,6 +6,8 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
+
+	"github.com/netsys-lab/scion-pila/pkg/logger"
 )
 
 func LoadRawCACertificates(key, cert string) ([]*x509.Certificate, []byte) {
@@ -30,12 +32,7 @@ func LoadRawCACertificates(key, cert string) ([]*x509.Certificate, []byte) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Certificate Chain:")
-	for i, cert := range certs {
-		fmt.Printf("Certificate %d:\n", i+1)
-		fmt.Printf("  Subject: %s\n", cert.Subject.CommonName)
-	}
-
+	logger.Log.Debug("Parsed CA Certificate Chain")
 	return certs, caKeyPEM
 }
 
